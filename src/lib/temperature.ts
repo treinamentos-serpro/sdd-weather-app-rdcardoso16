@@ -1,28 +1,24 @@
 import type { Unit } from '../types/weather';
 
-/** Converte uma temperatura em Celsius para Fahrenheit. */
-export function toFahrenheit(celsius: number): number {
-  return celsius * (9 / 5) + 32;
+export function convertTemperature(temperatureC: number, unit: Unit): number {
+  if (unit === 'celsius') {
+    return temperatureC;
+  }
+
+  const temperatureF = (temperatureC * 9) / 5 + 32;
+  return Math.sign(temperatureF) * Math.round(Math.abs(temperatureF));
 }
 
-/**
- * Converte um valor em Celsius para a unidade desejada, sem arredondar.
- * Mantém a função pura e testável.
- */
-export function convertTemperature(celsius: number, unit: Unit): number {
-  return unit === 'fahrenheit' ? toFahrenheit(celsius) : celsius;
+export function toDisplayTemperature(temperatureC: number, unit: Unit): number {
+  return convertTemperature(temperatureC, unit);
 }
 
-/**
- * Formata uma temperatura (armazenada em Celsius) para exibição na unidade
- * escolhida, arredondando para inteiro e adicionando o símbolo de grau.
- */
-export function formatTemperature(celsius: number, unit: Unit): string {
-  const value = Math.round(convertTemperature(celsius, unit));
-  return `${value}°`;
-}
-
-/** Rótulo curto da unidade atual (°C / °F). */
 export function unitLabel(unit: Unit): string {
-  return unit === 'fahrenheit' ? '°F' : '°C';
+  return unit === 'celsius' ? 'Celsius' : 'Fahrenheit';
+}
+
+export function formatTemperature(temperatureC: number, unit: Unit): string {
+  const temperature = convertTemperature(temperatureC, unit);
+  const suffix = unit === 'celsius' ? '°C' : '°F';
+  return `${temperature}${suffix}`;
 }

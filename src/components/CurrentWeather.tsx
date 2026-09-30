@@ -1,77 +1,83 @@
-import type { CurrentWeather as CurrentWeatherType, City, Unit } from '../types/weather';
+import { formatLocalTime, isValidLocalTimestamp } from '../lib/dateTime';
+import { isFiniteNumber } from '../lib/format';
 import { formatTemperature } from '../lib/temperature';
-import { getWeatherIcon, getWeatherLabel } from '../lib/weatherCodes';
+import { describeWeatherCode } from '../lib/weatherCodes';
+import type { CurrentWeather as CurrentWeatherData, SectionResult, Unit } from '../types/weather';
 
 interface CurrentWeatherProps {
-  city: City;
-  current: CurrentWeatherType;
+  current: SectionResult<CurrentWeatherData>;
+  timezone: string;
   unit: Unit;
 }
 
-interface MetricProps {
-  icon: string;
-  label: string;
-  value: string;
-}
+export default function CurrentWeather({ current, timezone, unit }: CurrentWeatherProps) {
+  if (
+    current.status === 'unavailable' ||
+    !isFiniteNumber(current.data.temperatureC) ||
+    !isValidLocalTimestamp(current.data.timestamp)
+  ) {
+    return (
+      <section
+        aria-labelledby="current-weather-heading"
+        className="rounded-md border border-white/10 bg-white/[0.04] p-5 sm:p-7"
+      >
+        <h2
+          className="text-sm font-medium uppercase tracking-wide text-slate-400"
+          id="current-weather-heading"
+        >
+          Agora
+        </h2>
+        <p className="mt-5 text-slate-300">Dados atuais indisponíveis</p>
+      </section>
+    );
+  }
 
-function Metric({ icon, label, value }: MetricProps) {
-  return (
-    <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3 backdrop-blur-md">
-      <span aria-hidden="true" className="text-xl">
-        {icon}
-      </span>
-      <div>
-        <p className="text-xs text-white/50">{label}</p>
-        <p className="font-semibold">{value}</p>
-      </div>
-    </div>
-  );
-}
-
-/** Seção "hero" com as condições atuais da cidade selecionada. */
-export default function CurrentWeather({ city, current, unit }: CurrentWeatherProps) {
-  const location = [city.admin1, city.country].filter(Boolean).join(', ');
+  const { data } = current;
+  const metrics = [
+    isFiniteNumber(data.humidityPercent)
+      ? { label: 'Umidade', value: `${data.humidityPercent}%` }
+      : null,
+    isFiniteNumber(data.windSpeedKmh)
+      ? { label: 'Vento', value: `${data.windSpeedKmh} km/h` }
+      : null,
+    isFiniteNumber(data.precipitationMm)
+      ? { label: 'Precipitação', value: `${data.precipitationMm} mm` }
+      : null,
+  ].filter((metric) => metric !== null);
 
   return (
     <section
-      aria-label="Clima atual"
-      className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-md shadow-glass md:p-8"
+      aria-labelledby="current-weather-heading"
+      className="rounded-md border border-white/10 bg-white/[0.05] p-5 backdrop-blur-md sm:p-7"
     >
-      <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
+      <div className="flex flex-col justify-between gap-6 sm:flex-row sm:items-center">
         <div>
-          <h2 className="text-2xl font-bold md:text-3xl">{city.name}</h2>
-          {location && <p className="text-white/60">{location}</p>}
-
-          <div className="mt-6 flex items-center gap-4">
-            <span aria-hidden="true" className="text-6xl">
-              {getWeatherIcon(current.weatherCode)}
-            </span>
-            <span className="text-6xl font-light md:text-7xl">
-              {formatTemperature(current.temperature, unit)}
-            </span>
-          </div>
-          <p className="mt-2 text-white/70">{getWeatherLabel(current.weatherCode)}</p>
+          <h2
+            className="text-sm font-medium uppercase tracking-wide text-slate-400"
+            id="current-weather-heading"
+          >
+            Agora
+          </h2>
+          <p className="mt-3 text-lg text-cyan-100">{describeWeatherCode(data.weatherCode)}</p>
+          <p className="mt-2 text-sm text-slate-400">
+            Atualizado às {formatLocalTime(data.timestamp)} · horário local
+          </p>
         </div>
-
-        <div className="grid grid-cols-2 gap-3">
-          <Metric icon="💧" label="Umidade" value={`${Math.round(current.humidity)}%`} />
-          <Metric
-            icon="💨"
-            label="Vento"
-            value={`${Math.round(current.windSpeed)} km/h`}
-          />
-          <Metric
-            icon="🌧️"
-            label="Precipitação"
-            value={`${current.precipitation} mm`}
-          />
-          <Metric
-            icon="📊"
-            label="Pressão"
-            value={`${Math.round(current.pressure)} hPa`}
-          />
-        </div>
+        <p className="text-6xl font-semibold leading-none tracking-normal text-white sm:text-7xl">
+          {formatTemperature(data.temperatureC, unit)}
+        </p>
       </div>
+      {metrics.length > 0 ? (
+        <dl className="mt-8 grid grid-cols-2 gap-y-4 border-t border-white/10 pt-5 sm:grid-cols-3">
+          {metrics.map((metric) => (
+            <div key={metric.label}>
+              <dt className="text-sm text-slate-400">{metric.label}</dt>
+              <dd className="mt-1 font-medium text-white">{metric.value}</dd>
+            </div>
+          ))}
+        </dl>
+      ) : null}
+      <span className="sr-only">Fuso horário: {timezone}</span>
     </section>
   );
 }

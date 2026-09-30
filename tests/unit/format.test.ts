@@ -1,18 +1,15 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { getDayLabel, getShortDate } from '../../src/lib/format';
 
-describe('format', () => {
-  it('rotula o primeiro e o segundo dia', () => {
-    expect(getDayLabel('2026-06-16', 0)).toBe('Hoje');
-    expect(getDayLabel('2026-06-17', 1)).toBe('Amanhã');
+describe('format helpers', () => {
+  it('rotula hoje, amanhã e dias seguintes', () => {
+    expect(getDayLabel(0, '2026-09-30')).toBe('Hoje');
+    expect(getDayLabel(1, '2026-10-01')).toBe('Amanhã');
+    expect(getDayLabel(2, '2026-10-02')).toBe('sexta-feira');
   });
 
-  it('usa dia da semana para os demais', () => {
-    // 2026-06-18 é uma quinta-feira.
-    expect(getDayLabel('2026-06-18', 2)).toBe('Qui');
-  });
-
-  it('formata data curta', () => {
-    expect(getShortDate('2026-06-16')).toBe('16 Jun');
+  it('formata uma data curta e trata datas inválidas', () => {
+    expect(getShortDate('2026-09-30')).toBe('30/09');
+    expect(getShortDate(null)).toBe('Data indisponível');
   });
 });
